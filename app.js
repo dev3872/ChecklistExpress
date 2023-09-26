@@ -1,61 +1,87 @@
 const express = require("express");
+const mongoose = require("mongoose");
+
+const TaskModel = require("./src/models/Tasks").Task;
+require("dotenv").config();
+
 const app = express();
-const port = process.env.PORT || 3001;
+app.use(express.json());
 
-app.get("/", (req, res) => res.type('html').send(html));
+mongoose
+  .connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("mongodb connected"))
+  .catch((reason) => console.error(reason));
 
-const server = app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+// test api
+app.get("/:name", async (req, res) => {
+  try {
+    const userName = req.params.name;
+    const task = await TaskModel.findOne({
+      name: userName,
+    });
+    res.status(200).send(task);
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
 
-server.keepAliveTimeout = 120 * 1000;
-server.headersTimeout = 120 * 1000;
+app.post("/", async (req, res) => {
+  try {
+    const taskDoc = req.body;
+    const newtask = await TaskModel.create({
+      task: taskDoc.task,
+      name: taskDoc.name,
+    });
+    res.status(200).send(newtask);
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
 
-const html = `
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Hello from Render!</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <script>
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          disableForReducedMotion: true
-        });
-      }, 500);
-    </script>
-    <style>
-      @import url("https://p.typekit.net/p.css?s=1&k=vnd5zic&ht=tk&f=39475.39476.39477.39478.39479.39480.39481.39482&a=18673890&app=typekit&e=css");
-      @font-face {
-        font-family: "neo-sans";
-        src: url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff2"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("opentype");
-        font-style: normal;
-        font-weight: 700;
+app.put("/task/:taskId", async (req, res) => {
+  try {
+    const id = req.params;
+    const updateTask = await TaskModel.findOneAndUpdate(
+      {
+        "task._id": id.taskId,
+      },
+      {
+        "task.$.name": req.body.name,
+        "task.$.status": req.body.status,
       }
-      html {
-        font-family: neo-sans;
-        font-weight: 700;
-        font-size: calc(62rem / 16);
+    );
+    res.send(updateTask);
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.delete("/task/:taskId", async (req, res) => {
+  try {
+    const id = req.params;
+    const deletedTask = await TaskModel.findOneAndUpdate(
+      {
+        "task._id": id.taskId,
+      },
+      {
+        $pull: {
+          task: {
+            _id: id.taskId,
+          },
+        },
       }
-      body {
-        background: white;
-      }
-      section {
-        border-radius: 1em;
-        padding: 1em;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        margin-right: -50%;
-        transform: translate(-50%, -50%);
-      }
-    </style>
-  </head>
-  <body>
-    <section>
-      Hello from Render!
-    </section>
-  </body>
-</html>
-`
+    );
+    res.status(200).send(deletedTask);
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.listen(4000, (_, err) => {
+  if (!err) {
+    console.log("server running on port 4000");
+  }
+});
