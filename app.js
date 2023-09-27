@@ -42,6 +42,24 @@ app.post("/", async (req, res) => {
   }
 });
 
+app.post("/:docName", async (req, res) => {
+  try {
+    const docname = req.params.docName;
+    const taskDoc = req.body;
+    const newtask = await TaskModel.findOneAndUpdate(
+      { name: docname },
+      {
+        $push: {
+          task: { name: taskDoc.name, status: false },
+        },
+      }
+    );
+    res.status(200).send(newtask);
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
 app.put("/task/:taskId", async (req, res) => {
   try {
     const id = req.params;
