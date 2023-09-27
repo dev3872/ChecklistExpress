@@ -1,10 +1,11 @@
 const express = require("express");
 const mongoose = require("mongoose");
-
+const cors = require("cors");
 const TaskModel = require("./src/models/Tasks").Task;
 require("dotenv").config();
 
 const app = express();
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 mongoose
