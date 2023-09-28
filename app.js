@@ -16,8 +16,16 @@ mongoose
   .then(() => console.log("mongodb connected"))
   .catch((reason) => console.error(reason));
 
-// test api
-app.get("/:name", async (req, res) => {
+app.get("/", async (req, res) => {
+  try {
+    const task = await TaskModel.find({});
+    res.status(200).send(task);
+  } catch (err) {
+    res.status(400).send({ message: err.message });
+  }
+});
+
+app.get("/task/:name", async (req, res) => {
   try {
     const userName = req.params.name;
     const task = await TaskModel.findOne({
